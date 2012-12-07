@@ -50,6 +50,8 @@ float simple_prefetch_dot(int, float *, float *);
 float unroll_dot(int, float *, float *);
 float sse_dot(int, float *, float *);
 float avx_dot(int, float *, float *);
+float avx_unroll_dot(int, float *, float *);
+float avx_unroll_prefetch_dot(int, float *, float *);
 float blas_dot(int, float *, float *);
 float cublas_dot(int, float *, float *);
 
@@ -71,6 +73,8 @@ int main() {
     TIME(unroll_dot);
     TIME(sse_dot);
     TIME(avx_dot);
+    TIME(avx_unroll_dot);
+    TIME(avx_unroll_prefetch_dot);
     TIME(blas_dot);
 
     cublasInit();
@@ -178,6 +182,93 @@ float avx_dot(int N, float *A, float *B) {
     };
 
     tempv = temp;
+
+    float dot = 0;
+    for(int i = 0; i < VECTOR_SIZE; ++i) {
+        dot += tempf[i];
+    }
+
+    return dot;
+}
+
+float avx_unroll_dot(int N, float *A, float *B) {
+    const int VECTOR_SIZE = 8;
+
+    typedef float vec
+        __attribute__ ((vector_size (sizeof(float) * VECTOR_SIZE)));
+
+    vec temp1 = {0}, temp2 = {0};
+
+    N /= VECTOR_SIZE * 2;
+
+    vec *Av = (vec *)A;
+    vec *Bv = (vec *)B;
+
+    for(int i = 0; i < N; ++i) {
+        temp1 += *Av * *Bv;
+
+        Av++;
+        Bv++;
+
+        temp2 += *Av * *Bv;
+
+        Av++;
+        Bv++;
+    }
+
+    union {
+        vec tempv;
+        float tempf[VECTOR_SIZE];
+    };
+
+    tempv = temp1;
+
+    float dot = 0;
+    for(int i = 0; i < VECTOR_SIZE; ++i) {
+        dot += tempf[i];
+    }
+
+    tempv = temp2;
+
+    for(int i = 0; i < VECTOR_SIZE; ++i) {
+        dot += tempf[i];
+    }
+
+    return dot;
+}
+
+float avx_unroll_prefetch_dot(int N, float *A, float *B) {
+    const int VECTOR_SIZE = 8;
+
+    typedef float vec
+        __attribute__ ((vector_size (sizeof(float) * VECTOR_SIZE)));
+
+    vec temp1 = {0}, temp2 = {0};
+
+    N /= VECTOR_SIZE * 2;
+
+    vec *Av = (vec *)A;
+    vec *Bv = (vec *)B;
+
+    for(int i = 0; i < N; ++i) {
+        __builtin_prefetch(Av + 2, 0, 0);
+        temp1 += *Av * *Bv;
+
+        Av++;
+        Bv++;
+
+        temp2 += *Av * *Bv;
+
+        Av++;
+        Bv++;
+    }
+
+    union {
+        vec tempv;
+        float tempf[VECTOR_SIZE];
+    };
+
+    tempv = temp1 + temp2;
 
     float dot = 0;
     for(int i = 0; i < VECTOR_SIZE; ++i) {
