@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cassert>
+#include <iomanip>
 
 #include <string.h>
 #include <malloc.h>
@@ -62,15 +63,16 @@ int main() {
     assert(A);
     assert(B);
     
-    cout << "Simple\t" << time_dot(simple_dot, N, A, B) << endl;;
-    cout << "Simple+prefetch\t" << time_dot(simple_dot, N, A, B) << endl;;
-    cout << "SSE\t" << time_dot(sse_dot, N, A, B) << endl;;
-    cout << "AVX\t" << time_dot(avx_dot, N, A, B) << endl;;
-    cout << "BLAS\t" << time_dot(blas_dot, N, A, B) << endl;;
-    cout << "CUBLAS\t" << time_dot(cublas_dot, N, A, B) << endl;;
-
+#define TIME(f) cout << setw(24) << #f "\t" << time_dot(f, N, A, B) << endl;
+    
+    TIME(simple_dot);
+    TIME(simple_prefetch_dot);
+    TIME(sse_dot);
+    TIME(avx_dot);
+    TIME(blas_dot);
 
     cublasInit();
+    TIME(cublas_dot);
 
 
     cublasShutdown();
