@@ -1,4 +1,4 @@
-CXX = g++-4.5.4
+CXX = g++-4.6.3
 
 CXXFLAGS = -std=c++0x -O3 -Wall -g -mavx
 LDFLAGS = -lpapi

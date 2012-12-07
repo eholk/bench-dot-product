@@ -7,8 +7,6 @@
 
 using namespace std;
 
-const int VECTOR_SIZE = 4;
-
 template<typename DotFunction>
 float time_dot(DotFunction f, int N, float *A, float *B) {
     auto start = PAPI_get_real_usec();
@@ -26,7 +24,7 @@ float time_dot(DotFunction f, int N, float *A, float *B) {
 
 // Generate a random vector
 float *generate_vector(int N) {
-    float *v = (float *)memalign(VECTOR_SIZE * sizeof(float),
+    float *v = (float *)memalign(32,
                                  sizeof(float) * N);
 
     for(int i = 0; i < N; ++i) {
@@ -37,6 +35,7 @@ float *generate_vector(int N) {
 }
 
 float simple_dot(int, float *, float *);
+float sse_dot(int, float *, float *);
 float avx_dot(int, float *, float *);
 
 int main() {
@@ -51,6 +50,7 @@ int main() {
     assert(B);
     
     cout << "Simple\t" << time_dot(simple_dot, N, A, B) << endl;;
+    cout << "SSE\t" << time_dot(sse_dot, N, A, B) << endl;;
     cout << "AVX\t" << time_dot(avx_dot, N, A, B) << endl;;
     
     free(A);
@@ -69,9 +69,12 @@ float simple_dot(int N, float *A, float *B) {
     return dot;
 }
 
-typedef float vec __attribute__ ((vector_size (sizeof(float) * VECTOR_SIZE)));
+float sse_dot(int N, float *A, float *B) {
+    const int VECTOR_SIZE = 4;
 
-float avx_dot(int N, float *A, float *B) {
+    typedef float vec
+        __attribute__ ((vector_size (sizeof(float) * VECTOR_SIZE)));
+
     vec temp = {0};
 
     N /= VECTOR_SIZE;
@@ -86,7 +89,6 @@ float avx_dot(int N, float *A, float *B) {
         Bv++;
     }
 
-    //float * tempf = (float *)&temp;
     union {
         vec tempv;
         float tempf[VECTOR_SIZE];
@@ -101,3 +103,39 @@ float avx_dot(int N, float *A, float *B) {
 
     return dot;
 }
+
+float avx_dot(int N, float *A, float *B) {
+    const int VECTOR_SIZE = 8;
+
+    typedef float vec
+        __attribute__ ((vector_size (sizeof(float) * VECTOR_SIZE)));
+
+    vec temp = {0};
+
+    N /= VECTOR_SIZE;
+
+    vec *Av = (vec *)A;
+    vec *Bv = (vec *)B;
+
+    for(int i = 0; i < N; ++i) {
+        temp += *Av * *Bv;
+
+        Av++;
+        Bv++;
+    }
+
+    union {
+        vec tempv;
+        float tempf[VECTOR_SIZE];
+    };
+
+    tempv = temp;
+
+    float dot = 0;
+    for(int i = 0; i < VECTOR_SIZE; ++i) {
+        dot += tempf[i];
+    }
+
+    return dot;
+}
+
