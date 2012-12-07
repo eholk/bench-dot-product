@@ -9,6 +9,8 @@ extern "C" {
 #include <cblas.h>
 }
 
+#include <cublas.h>
+
 using namespace std;
 
 template<typename DotFunction>
@@ -42,6 +44,7 @@ float simple_dot(int, float *, float *);
 float sse_dot(int, float *, float *);
 float avx_dot(int, float *, float *);
 float blas_dot(int, float *, float *);
+float cublas_dot(int, float *, float *);
 
 int main() {
     auto N = (128 << 20) / sizeof(float);
@@ -57,8 +60,14 @@ int main() {
     cout << "Simple\t" << time_dot(simple_dot, N, A, B) << endl;;
     cout << "SSE\t" << time_dot(sse_dot, N, A, B) << endl;;
     cout << "AVX\t" << time_dot(avx_dot, N, A, B) << endl;;
-    cout << "BLAS\t" << time_dot(avx_dot, N, A, B) << endl;;
-    
+    cout << "BLAS\t" << time_dot(blas_dot, N, A, B) << endl;;
+    cout << "CUBLAS\t" << time_dot(cublas_dot, N, A, B) << endl;;
+
+
+    cublasInit();
+
+
+    cublasShutdown();
     free(A);
     free(B);
 }
@@ -147,4 +156,8 @@ float avx_dot(int N, float *A, float *B) {
 
 float blas_dot(int N, float *A, float *B) {
     return cblas_sdot(N, A, 1, B, 1);
+}
+
+float cublas_dot(int N, float *A, float *B) {
+    return cublasSdot(N, A, 1, B, 1);
 }
