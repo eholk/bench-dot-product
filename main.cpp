@@ -5,6 +5,10 @@
 #include <malloc.h>
 #include <papi.h>
 
+extern "C" {
+#include <cblas.h>
+}
+
 using namespace std;
 
 template<typename DotFunction>
@@ -37,6 +41,7 @@ float *generate_vector(int N) {
 float simple_dot(int, float *, float *);
 float sse_dot(int, float *, float *);
 float avx_dot(int, float *, float *);
+float blas_dot(int, float *, float *);
 
 int main() {
     auto N = (128 << 20) / sizeof(float);
@@ -52,6 +57,7 @@ int main() {
     cout << "Simple\t" << time_dot(simple_dot, N, A, B) << endl;;
     cout << "SSE\t" << time_dot(sse_dot, N, A, B) << endl;;
     cout << "AVX\t" << time_dot(avx_dot, N, A, B) << endl;;
+    cout << "BLAS\t" << time_dot(avx_dot, N, A, B) << endl;;
     
     free(A);
     free(B);
@@ -139,3 +145,6 @@ float avx_dot(int N, float *A, float *B) {
     return dot;
 }
 
+float blas_dot(int N, float *A, float *B) {
+    return cblas_sdot(N, A, 1, B, 1);
+}
