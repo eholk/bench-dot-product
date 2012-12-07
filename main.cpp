@@ -72,12 +72,7 @@ float simple_dot(int N, float *A, float *B) {
 typedef float vec __attribute__ ((vector_size (sizeof(float) * VECTOR_SIZE)));
 
 float avx_dot(int N, float *A, float *B) {
-    vec temp;
-    float *tempf = (float *)&temp;
-
-    for(int i = 0; i < VECTOR_SIZE; ++i) {
-        tempf[i] = 0;
-    }
+    vec temp = {0};
 
     N /= VECTOR_SIZE;
 
@@ -90,6 +85,14 @@ float avx_dot(int N, float *A, float *B) {
         Av++;
         Bv++;
     }
+
+    //float * tempf = (float *)&temp;
+    union {
+        vec tempv;
+        float tempf[VECTOR_SIZE];
+    };
+
+    tempv = temp;
 
     float dot = 0;
     for(int i = 0; i < VECTOR_SIZE; ++i) {
