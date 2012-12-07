@@ -15,8 +15,8 @@ extern "C" {
 using namespace std;
 
 // I stole this number from the ATLAS assembly.
-//const int PREFETCH_DISTANCE = 80;
-const int PREFETCH_DISTANCE = 32;
+const int PREFETCH_DISTANCE = 80;
+//const int PREFETCH_DISTANCE = 32;
 
 template<typename DotFunction>
 float time_dot(DotFunction f, int N, float *A, float *B) {
@@ -47,6 +47,7 @@ float *generate_vector(int N) {
 
 float simple_dot(int, float *, float *);
 float simple_prefetch_dot(int, float *, float *);
+float unroll_dot(int, float *, float *);
 float sse_dot(int, float *, float *);
 float avx_dot(int, float *, float *);
 float blas_dot(int, float *, float *);
@@ -67,6 +68,7 @@ int main() {
     
     TIME(simple_dot);
     TIME(simple_prefetch_dot);
+    TIME(unroll_dot);
     TIME(sse_dot);
     TIME(avx_dot);
     TIME(blas_dot);
@@ -90,6 +92,19 @@ float simple_dot(int N, float *A, float *B) {
     }
 
     return dot;
+}
+
+float unroll_dot(int N, float *A, float *B) {
+    float dot1 = 0, dot2 = 0, dot3 = 0, dot4 = 0;
+
+    for(int i = 0; i < N; i += 4) {
+        dot1 += A[i] * B[i];
+        dot2 += A[i + 1] * B[i + 1];
+        dot3 += A[i + 2] * B[i + 2];
+        dot4 += A[i + 3] * B[i + 3];
+    }
+
+    return dot1 + dot2 + dot3 + dot4;
 }
 
 float simple_prefetch_dot(int N, float *A, float *B) {
