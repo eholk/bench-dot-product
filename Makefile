@@ -1,8 +1,6 @@
-ifndef CXX
-	CXX = clang++
-endif
+CXX = g++-4.5.4
 
-CXXFLAGS = -std=c++0x -O -Wall -g
+CXXFLAGS = -std=c++0x -O3 -Wall -g -mavx
 LDFLAGS = -lpapi
 
 dot-product: main.cpp
