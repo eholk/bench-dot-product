@@ -13,6 +13,10 @@ extern "C" {
 
 using namespace std;
 
+// I stole this number from the ATLAS assembly.
+//const int PREFETCH_DISTANCE = 80;
+const int PREFETCH_DISTANCE = 32;
+
 template<typename DotFunction>
 float time_dot(DotFunction f, int N, float *A, float *B) {
     auto start = PAPI_get_real_usec();
@@ -41,6 +45,7 @@ float *generate_vector(int N) {
 }
 
 float simple_dot(int, float *, float *);
+float simple_prefetch_dot(int, float *, float *);
 float sse_dot(int, float *, float *);
 float avx_dot(int, float *, float *);
 float blas_dot(int, float *, float *);
@@ -58,6 +63,7 @@ int main() {
     assert(B);
     
     cout << "Simple\t" << time_dot(simple_dot, N, A, B) << endl;;
+    cout << "Simple+prefetch\t" << time_dot(simple_dot, N, A, B) << endl;;
     cout << "SSE\t" << time_dot(sse_dot, N, A, B) << endl;;
     cout << "AVX\t" << time_dot(avx_dot, N, A, B) << endl;;
     cout << "BLAS\t" << time_dot(blas_dot, N, A, B) << endl;;
@@ -78,6 +84,16 @@ int main() {
 float simple_dot(int N, float *A, float *B) {
     float dot = 0;
     for(int i = 0; i < N; ++i) {
+        dot += A[i] * B[i];
+    }
+
+    return dot;
+}
+
+float simple_prefetch_dot(int N, float *A, float *B) {
+    float dot = 0;
+    for(int i = 0; i < N; ++i) {
+        __builtin_prefetch(A + i + PREFETCH_DISTANCE, 0, 0);
         dot += A[i] * B[i];
     }
 
