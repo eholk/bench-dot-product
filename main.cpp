@@ -192,5 +192,19 @@ float blas_dot(int N, float *A, float *B) {
 }
 
 float cublas_dot(int N, float *A, float *B) {
-    return cublasSdot(N, A, 1, B, 1);
+    float *Ad;
+    float *Bd;
+    cublasAlloc(N, sizeof(float), (void **)&Ad);
+    cublasAlloc(N, sizeof(float), (void **)&Bd);
+
+    cublasSetVector(N, sizeof(float), A, 1, Ad, 1);
+    cublasSetVector(N, sizeof(float), B, 1, Bd, 1);
+
+    float dot = cublasSdot(N, Ad, 1, Bd, 1);
+    assert(cublasGetError() == CUBLAS_STATUS_SUCCESS);
+
+    cublasFree(Ad);
+    cublasFree(Bd);
+
+    return dot;
 }
