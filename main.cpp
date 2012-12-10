@@ -18,19 +18,27 @@ using namespace std;
 const int PREFETCH_DISTANCE = 80;
 //const int PREFETCH_DISTANCE = 32;
 
+const int NUM_TRIALS = 100;
+
 template<typename DotFunction>
 float time_dot(DotFunction f, int N, float *A, float *B) {
-    auto start = PAPI_get_real_usec();
+    auto total = 0;
 
-    auto dot = f(N, A, B);
+    for(int i = 0; i < NUM_TRIALS; ++i) {
+        auto start = PAPI_get_real_usec();
 
-    auto stop = PAPI_get_real_usec();
+        auto dot = f(N, A, B);
 
-    // A relatively harmless call to keep the compiler from realizing
-    // we don't actually do any useful work with the dot product.
-    srand48(dot);
+        auto stop = PAPI_get_real_usec();
 
-    return float(stop - start) / 1e6;    
+        // A relatively harmless call to keep the compiler from realizing
+        // we don't actually do any useful work with the dot product.
+        srand48(dot);
+        
+        total += stop - start;
+    }
+
+    return float(total) / (1e6 * NUM_TRIALS);
 }
 
 // Generate a random vector
